@@ -196,3 +196,45 @@
   width: 100%;
   text-align: center;
 }
+
+.file-upload-hint {
+  font-size: 12px;
+  color: #666;
+  margin-top: 5px;
+  text-align: center;
+}
+
+.upload-progress {
+  color: #565eef;
+  font-size: 14px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.file-upload-label[disabled],
+.file-upload-remove-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-error {
+  color: #ff3333;
+  font-size: 14px;
+  margin: 10px 0;
+  min-height: 20px;
+  text-align: center;
+}
+
+.file-upload-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.file-upload-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}

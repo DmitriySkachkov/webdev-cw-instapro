@@ -1,6 +1,5 @@
-// Замени на свой, чтобы получить независимый от других набор данных.
-// "боевая" версия инстапро лежит в ключе prod
-const personalKey = "prod";
+
+const personalKey = "dmitriy-skachkov";
 const baseHost = "https://webdev-hw-api.vercel.app";
 const postsHost = `${baseHost}/api/v1/${personalKey}/instapro`;
 
@@ -15,7 +14,88 @@ export function getPosts({ token }) {
       if (response.status === 401) {
         throw new Error("Нет авторизации");
       }
+      if (!response.ok) {
+        throw new Error(`Ошибка HTTP! статус: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      return data.posts;
+    });
+}
 
+export function addPost({ token, description, imageUrl }) {
+  return fetch(postsHost, {
+    method: "POST",
+    body: JSON.stringify({
+      description,
+      imageUrl,
+    }),
+    headers: {
+      Authorization: token,
+    },
+  })
+    .then((response) => {
+      if (response.status === 401) {
+        throw new Error("Нет авторизации");
+      }
+      if (!response.ok) {
+        throw new Error(`Ошибка HTTP! статус: ${response.status}`);
+      }
+      return response.json();
+    });
+}
+
+export function likePost({ token, postId }) {
+  return fetch(`${postsHost}/${postId}/like`, {
+    method: "POST",
+    headers: {
+      Authorization: token,
+    },
+  })
+    .then((response) => {
+      if (response.status === 401) {
+        throw new Error("Нет авторизации");
+      }
+      if (!response.ok) {
+        throw new Error(`Ошибка HTTP! статус: ${response.status}`);
+      }
+      return response.json();
+    });
+}
+
+export function dislikePost({ token, postId }) {
+  return fetch(`${postsHost}/${postId}/dislike`, {
+    method: "POST",
+    headers: {
+      Authorization: token,
+    },
+  })
+    .then((response) => {
+      if (response.status === 401) {
+        throw new Error("Нет авторизации");
+      }
+      if (!response.ok) {
+        throw new Error(`Ошибка HTTP! статус: ${response.status}`);
+      }
+      return response.json();
+    });
+}
+
+export function getUserPosts({ token, userId }) {
+  return fetch(`${postsHost}/user-posts/${userId}`, {
+    method: "GET",
+    headers: {
+      Authorization: token,
+    },
+  })
+    .then((response) => {
+      if (response.status === 401) {
+        throw new Error("Нет авторизации");
+      }
+      if (!response.ok) {
+        throw new Error(`Ошибка HTTP! статус: ${response.status}`);
+      }
       return response.json();
     })
     .then((data) => {
@@ -32,12 +112,16 @@ export function registerUser({ login, password, name, imageUrl }) {
       name,
       imageUrl,
     }),
-  }).then((response) => {
-    if (response.status === 400) {
-      throw new Error("Такой пользователь уже существует");
-    }
-    return response.json();
-  });
+  })
+    .then((response) => {
+      if (response.status === 400) {
+        throw new Error("Такой пользователь уже существует");
+      }
+      if (!response.ok) {
+        throw new Error(`Ошибка HTTP! статус: ${response.status}`);
+      }
+      return response.json();
+    });
 }
 
 export function loginUser({ login, password }) {
@@ -47,15 +131,18 @@ export function loginUser({ login, password }) {
       login,
       password,
     }),
-  }).then((response) => {
-    if (response.status === 400) {
-      throw new Error("Неверный логин или пароль");
-    }
-    return response.json();
-  });
+  })
+    .then((response) => {
+      if (response.status === 400) {
+        throw new Error("Неверный логин или пароль");
+      }
+      if (!response.ok) {
+        throw new Error(`Ошибка HTTP! статус: ${response.status}`);
+      }
+      return response.json();
+    });
 }
 
-// Загружает картинку в облако, возвращает url загруженной картинки
 export function uploadImage({ file }) {
   const data = new FormData();
   data.append("file", file);
@@ -63,7 +150,11 @@ export function uploadImage({ file }) {
   return fetch(baseHost + "/api/upload/image", {
     method: "POST",
     body: data,
-  }).then((response) => {
-    return response.json();
-  });
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Ошибка HTTP! статус: ${response.status}`);
+      }
+      return response.json();
+    });
 }

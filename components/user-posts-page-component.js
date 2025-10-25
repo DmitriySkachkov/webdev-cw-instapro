@@ -1,10 +1,24 @@
-import { USER_POSTS_PAGE } from "../routes.js";
 import { renderHeaderComponent } from "./header-component.js";
 import { posts, goToPage, user } from "../index.js";
 import { likePost, dislikePost } from "../api.js";
 
-export function renderPostsPageComponent({ appEl }) {
-  console.log("Актуальный список постов:", posts);
+export function renderUserPostsPageComponent({ appEl, userId }) {
+  const userPosts = posts.filter(post => post.user.id === userId);
+  
+  if (userPosts.length === 0) {
+    appEl.innerHTML = `
+      <div class="page-container">
+        <div class="header-container"></div>
+        <p>У пользователя пока нет постов</p>
+      </div>
+    `;
+    renderHeaderComponent({
+      element: document.querySelector(".header-container"),
+    });
+    return;
+  }
+
+  const userData = userPosts[0].user;
 
   const formatDate = (createdAt) => {
     const now = new Date();
@@ -55,13 +69,13 @@ export function renderPostsPageComponent({ appEl }) {
   const appHtml = `
     <div class="page-container">
       <div class="header-container"></div>
+      <div class="posts-user-header">
+        <img src="${userData.imageUrl}" class="posts-user-header__user-image">
+        <p class="posts-user-header__user-name">${userData.name}</p>
+      </div>
       <ul class="posts">
-        ${posts.map(post => `
+        ${userPosts.map(post => `
           <li class="post">
-            <div class="post-header" data-user-id="${post.user.id}">
-                <img src="${post.user.imageUrl}" class="post-header__user-image">
-                <p class="post-header__user-name">${post.user.name}</p>
-            </div>
             <div class="post-image-container">
               <img class="post-image" src="${post.imageUrl}">
             </div>
@@ -91,14 +105,6 @@ export function renderPostsPageComponent({ appEl }) {
     element: document.querySelector(".header-container"),
   });
 
-  for (let userEl of document.querySelectorAll(".post-header")) {
-    userEl.addEventListener("click", () => {
-      goToPage(USER_POSTS_PAGE, {
-        userId: userEl.dataset.userId,
-      });
-    });
-  }
-
   for (let likeButton of document.querySelectorAll(".like-button")) {
     likeButton.addEventListener("click", () => {
       const postId = likeButton.dataset.postId;
@@ -108,7 +114,7 @@ export function renderPostsPageComponent({ appEl }) {
         return;
       }
 
-      // Находим пост в массиве posts
+      // Находим пост в основном массиве posts
       const postIndex = posts.findIndex(p => p.id === postId);
       if (postIndex === -1) {
         console.error("Пост не найден:", postId);
@@ -119,11 +125,9 @@ export function renderPostsPageComponent({ appEl }) {
       const post = posts[postIndex];
       const token = `Bearer ${user.token}`;
 
-      console.log("Текущий пост:", post);
+      console.log("Текущий пост на странице пользователя:", post);
       console.log("isLiked:", post.isLiked);
-      console.log("Лайки:", post.likes);
 
-      // Определяем текущее состояние лайка
       const isCurrentlyLiked = post.isLiked;
 
       if (isCurrentlyLiked) {
@@ -132,10 +136,10 @@ export function renderPostsPageComponent({ appEl }) {
         dislikePost({ token, postId })
           .then((updatedPost) => {
             console.log("Лайк убран, обновленный пост:", updatedPost);
-            // Обновляем пост в массиве
+            // Обновляем пост в основном массиве
             posts[postIndex] = updatedPost;
-            // Перерисовываем компонент
-            renderPostsPageComponent({ appEl });
+            // Перерисовываем страницу
+            renderUserPostsPageComponent({ appEl, userId });
           })
           .catch((error) => {
             console.error("Ошибка при снятии лайка:", error);
@@ -147,10 +151,10 @@ export function renderPostsPageComponent({ appEl }) {
         likePost({ token, postId })
           .then((updatedPost) => {
             console.log("Лайк поставлен, обновленный пост:", updatedPost);
-            // Обновляем пост в массиве
+            // Обновляем пост в основном массиве
             posts[postIndex] = updatedPost;
-            // Перерисовываем компонент
-            renderPostsPageComponent({ appEl });
+            // Перерисовываем страницу
+            renderUserPostsPageComponent({ appEl, userId });
           })
           .catch((error) => {
             console.error("Ошибка при установке лайка:", error);
