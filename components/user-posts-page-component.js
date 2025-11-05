@@ -1,9 +1,10 @@
 import { renderHeaderComponent } from "./header-component.js";
 import { posts, goToPage, user } from "../index.js";
 import { likePost, dislikePost } from "../api.js";
+import { formatDate, initLikeButtonHandlers } from "../helpers.js";
 
 export function renderUserPostsPageComponent({ appEl, userId }) {
-  const userPosts = posts.filter(post => post.user.id === userId);
+  const userPosts = posts.filter(post => post && post.user && post.user.id === userId);
   
   if (userPosts.length === 0) {
     appEl.innerHTML = `
@@ -20,52 +21,6 @@ export function renderUserPostsPageComponent({ appEl, userId }) {
 
   const userData = userPosts[0].user;
 
-  const formatDate = (createdAt) => {
-    const now = new Date();
-    const postDate = new Date(createdAt);
-    const diffInSeconds = Math.floor((now - postDate) / 1000);
-    
-    if (diffInSeconds < 60) {
-      return 'только что';
-    } else if (diffInSeconds < 3600) {
-      const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes} ${getMinutesText(minutes)} назад`;
-    } else if (diffInSeconds < 86400) {
-      const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours} ${getHoursText(hours)} назад`;
-    } else if (diffInSeconds < 2592000) {
-      const days = Math.floor(diffInSeconds / 86400);
-      return `${days} ${getDaysText(days)} назад`;
-    } else {
-      const months = Math.floor(diffInSeconds / 2592000);
-      return `${months} ${getMonthsText(months)} назад`;
-    }
-  };
-
-  const getMinutesText = (minutes) => {
-    if (minutes === 1) return 'минуту';
-    if (minutes >= 2 && minutes <= 4) return 'минуты';
-    return 'минут';
-  };
-
-  const getHoursText = (hours) => {
-    if (hours === 1) return 'час';
-    if (hours >= 2 && hours <= 4) return 'часа';
-    return 'часов';
-  };
-
-  const getDaysText = (days) => {
-    if (days === 1) return 'день';
-    if (days >= 2 && days <= 4) return 'дня';
-    return 'дней';
-  };
-
-  const getMonthsText = (months) => {
-    if (months === 1) return 'месяц';
-    if (months >= 2 && months <= 4) return 'месяца';
-    return 'месяцев';
-  };
-
   const appHtml = `
     <div class="page-container">
       <div class="header-container"></div>
@@ -74,7 +29,12 @@ export function renderUserPostsPageComponent({ appEl, userId }) {
         <p class="posts-user-header__user-name">${userData.name}</p>
       </div>
       <ul class="posts">
-        ${userPosts.map(post => `
+        ${userPosts.map(post => {
+          if (!post || !post.user) {
+            console.error("Некорректный пост:", post);
+            return '';
+          }
+          return `
           <li class="post">
             <div class="post-image-container">
               <img class="post-image" src="${post.imageUrl}">
@@ -84,7 +44,7 @@ export function renderUserPostsPageComponent({ appEl, userId }) {
                 <img src="${post.isLiked ? './assets/images/like-active.svg' : './assets/images/like-not-active.svg'}" alt="${post.isLiked ? 'Убрать лайк' : 'Поставить лайк'}">
               </button>
               <p class="post-likes-text">
-                Нравится: <strong>${post.likes.length}</strong>
+                Нравится: <strong>${post.likes ? post.likes.length : 0}</strong>
               </p>
             </div>
             <p class="post-text">
@@ -95,7 +55,7 @@ export function renderUserPostsPageComponent({ appEl, userId }) {
               ${formatDate(post.createdAt)}
             </p>
           </li>
-        `).join('')}
+        `}).join('')}
       </ul>
     </div>`;
 
@@ -105,62 +65,37 @@ export function renderUserPostsPageComponent({ appEl, userId }) {
     element: document.querySelector(".header-container"),
   });
 
-  for (let likeButton of document.querySelectorAll(".like-button")) {
-    likeButton.addEventListener("click", () => {
-      const postId = likeButton.dataset.postId;
-      
-      if (!user) {
-        alert("Для лайков нужно авторизоваться");
-        return;
-      }
-
-      // Находим пост в основном массиве posts
-      const postIndex = posts.findIndex(p => p.id === postId);
-      if (postIndex === -1) {
-        console.error("Пост не найден:", postId);
-        alert("Ошибка: пост не найден");
-        return;
-      }
-
-      const post = posts[postIndex];
+  initLikeButtonHandlers({
+    appEl,
+    posts,
+    user,
+    onLikeUpdate: async (postId, postIndex) => {
       const token = `Bearer ${user.token}`;
+      const post = posts[postIndex];
 
-      console.log("Текущий пост на странице пользователя:", post);
-      console.log("isLiked:", post.isLiked);
-
-      const isCurrentlyLiked = post.isLiked;
-
-      if (isCurrentlyLiked) {
-        // Убираем лайк
-        console.log("Убираем лайк с поста:", postId);
-        dislikePost({ token, postId })
-          .then((updatedPost) => {
-            console.log("Лайк убран, обновленный пост:", updatedPost);
-            // Обновляем пост в основном массиве
-            posts[postIndex] = updatedPost;
-            // Перерисовываем страницу
-            renderUserPostsPageComponent({ appEl, userId });
-          })
-          .catch((error) => {
-            console.error("Ошибка при снятии лайка:", error);
-            alert("Не удалось снять лайк: " + error.message);
-          });
-      } else {
-        // Ставим лайк
-        console.log("Ставим лайк на пост:", postId);
-        likePost({ token, postId })
-          .then((updatedPost) => {
-            console.log("Лайк поставлен, обновленный пост:", updatedPost);
-            // Обновляем пост в основном массиве
-            posts[postIndex] = updatedPost;
-            // Перерисовываем страницу
-            renderUserPostsPageComponent({ appEl, userId });
-          })
-          .catch((error) => {
-            console.error("Ошибка при установке лайка:", error);
-            alert("Не удалось поставить лайк: " + error.message);
-          });
+      try {
+        let response;
+        if (post.isLiked) {
+          response = await dislikePost({ token, postId });
+        } else {
+          response = await likePost({ token, postId });
+        }
+        
+        console.log("Ответ от API:", response);
+        
+        if (response && response.post) {
+          posts[postIndex] = response.post;
+        } else if (response) {
+          posts[postIndex] = response;
+        } else {
+          throw new Error("Пустой ответ от сервера");
+        }
+        
+        renderUserPostsPageComponent({ appEl, userId });
+      } catch (error) {
+        console.error("Ошибка при лайке:", error);
+        alert("Не удалось обновить лайк: " + error.message);
       }
-    });
-  }
+    }
+  });
 }

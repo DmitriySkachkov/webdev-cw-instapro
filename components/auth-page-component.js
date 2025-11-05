@@ -153,7 +153,6 @@ export function renderAuthPageComponent({ appEl, setUser }) {
       renderForm();
     });
 
-    // Автофокус на первом поле
     const firstInput = appEl.querySelector('input');
     if (firstInput) {
       firstInput.focus();

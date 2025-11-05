@@ -57,8 +57,11 @@ export function likePost({ token, postId }) {
       if (response.status === 401) {
         throw new Error("Нет авторизации");
       }
+      if (response.status === 404) {
+        throw new Error("Пост не найден");
+      }
       if (!response.ok) {
-        throw new Error(`Ошибка HTTP! статус: ${response.status}`);
+        throw new Error(`Ошибка лайка! статус: ${response.status}`);
       }
       return response.json();
     });
@@ -75,8 +78,11 @@ export function dislikePost({ token, postId }) {
       if (response.status === 401) {
         throw new Error("Нет авторизации");
       }
+      if (response.status === 404) {
+        throw new Error("Пост не найден");
+      }
       if (!response.ok) {
-        throw new Error(`Ошибка HTTP! статус: ${response.status}`);
+        throw new Error(`Ошибка дизлайка! статус: ${response.status}`);
       }
       return response.json();
     });

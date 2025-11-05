@@ -21,6 +21,8 @@ export let user = getUserFromLocalStorage();
 export let page = null;
 export let posts = [];
 
+let data = {};
+
 const getToken = () => {
   const token = user ? `Bearer ${user.token}` : undefined;
   return token;
@@ -32,7 +34,11 @@ export const logout = () => {
   goToPage(POSTS_PAGE);
 };
 
-export const goToPage = (newPage, data) => {
+export const goToPage = (newPage, newData) => {
+  if (newData) {
+    data = newData;
+  }
+
   if (
     [
       POSTS_PAGE,
@@ -161,7 +167,6 @@ const renderApp = () => {
   }
 };
 
-// Запускаем приложение
 document.addEventListener('DOMContentLoaded', () => {
   goToPage(POSTS_PAGE);
 });
