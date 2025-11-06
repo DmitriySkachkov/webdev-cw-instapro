@@ -1,27 +1,41 @@
-import { USER_POSTS_PAGE } from "../routes.js";
 import { renderHeaderComponent } from "./header-component.js";
 import { posts, goToPage, user } from "../index.js";
 import { likePost, dislikePost } from "../api.js";
 import { formatDate, initLikeButtonHandlers } from "../helpers.js";
 
-export function renderPostsPageComponent({ appEl }) {
-  console.log("Актуальный список постов:", posts);
+export function renderUserPostsPageComponent({ appEl, userId }) {
+  const userPosts = posts.filter(post => post && post.user && post.user.id === userId);
+  
+  if (userPosts.length === 0) {
+    appEl.innerHTML = `
+      <div class="page-container">
+        <div class="header-container"></div>
+        <p>У пользователя пока нет постов</p>
+      </div>
+    `;
+    renderHeaderComponent({
+      element: document.querySelector(".header-container"),
+    });
+    return;
+  }
+
+  const userData = userPosts[0].user;
 
   const appHtml = `
     <div class="page-container">
       <div class="header-container"></div>
+      <div class="posts-user-header">
+        <img src="${userData.imageUrl}" class="posts-user-header__user-image">
+        <p class="posts-user-header__user-name">${userData.name}</p>
+      </div>
       <ul class="posts">
-        ${posts.map(post => {
+        ${userPosts.map(post => {
           if (!post || !post.user) {
             console.error("Некорректный пост:", post);
             return '';
           }
           return `
           <li class="post">
-            <div class="post-header" data-user-id="${post.user.id}">
-                <img src="${post.user.imageUrl}" class="post-header__user-image">
-                <p class="post-header__user-name">${post.user.name}</p>
-            </div>
             <div class="post-image-container">
               <img class="post-image" src="${post.imageUrl}">
             </div>
@@ -51,14 +65,6 @@ export function renderPostsPageComponent({ appEl }) {
     element: document.querySelector(".header-container"),
   });
 
-  for (let userEl of document.querySelectorAll(".post-header")) {
-    userEl.addEventListener("click", () => {
-      goToPage(USER_POSTS_PAGE, {
-        userId: userEl.dataset.userId,
-      });
-    });
-  }
-
   initLikeButtonHandlers({
     appEl,
     posts,
@@ -85,7 +91,7 @@ export function renderPostsPageComponent({ appEl }) {
           throw new Error("Пустой ответ от сервера");
         }
         
-        renderPostsPageComponent({ appEl });
+        renderUserPostsPageComponent({ appEl, userId });
       } catch (error) {
         console.error("Ошибка при лайке:", error);
         alert("Не удалось обновить лайк: " + error.message);
